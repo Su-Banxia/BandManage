@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>排练安排管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .editable-row { display: none; }
+        .flash-message {
+            position: fixed; top: 20px; right: 20px; z-index: 900; min-width: 300px;
+            border-radius: 8px; 
+            padding: 15px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            /* 移除背景色和边框的公共样式，避免覆盖状态类 */
+            border: none;
+            background-color: transparent;
+        }
+        .form-container {
+            background-color: #f8f9fa; border-radius: 8px; padding: 20px; 
+            margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .table-responsive {
+            border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status-scheduled { color: #28a745; font-weight: bold; }
+        .status-cancelled { color: #dc3545; font-weight: bold; }
+        .past-rehearsal { background-color: #f8f9fa; }
+        
+        /* 成功提示：绿色背景 */
+        .alert-success {
+            background-color: rgba(40, 167, 69, 0.95);
+            border: 1px solid #28a745;
+            color: #ffffff;
+        }
+        
+        /* 失败提示：红色背景 */
+        .alert-error {
+            background-color: rgba(220, 53, 69, 0.95) !important;
+            border: 1px solid #dc3545 !important;
+            color: #ffffff !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">排练安排管理</h1>
+            <div class="btn-group">
+                <a href="{{ url_for('home') }}" class="btn btn-primary">
+                    <i class="bi bi-house-door"></i> 回到主页
+                </a>
+                <a href="{{ url_for('rooms.manage_rooms') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-house-door"></i> 房间管理
+                </a>
+            </div>
+        </div>
+        
+        <!-- 闪存消息 -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show flash-message" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+        
+        <!-- 添加排练安排表单 -->
+        <div class="form-container">
+            <h3 class="mb-3">添加新排练安排</h3>
+            <form method="POST" action="{{ url_for('rehearsals.create_rehearsal') }}">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="band_id" class="form-label">乐队 <span class="text-danger">*</span></label>
+                        <select class="form-select" id="band_id" name="band_id" required>
+                            <option value="">-- 选择乐队 --</option>
+                            {% for band in bands %}
+                                <option value="{{ band.band_id }}">{{ band.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="room_id" class="form-label">房间 <span class="text-danger">*</span></label>
+                        <select class="form-select" id="room_id" name="room_id" required>
+                            <option value="">-- 选择房间 --</option>
+                            {% for room in rooms %}
+                                <option value="{{ room.room_id }}">{{ room.room_id }} ({{ room.type }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="purpose" class="form-label">用途说明 (选填)</label>
+                        <input type="text" class="form-control" id="purpose" name="purpose">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="start_time" class="form-label">开始时间 <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="start_time" name="start_time" 
+                               value="{{ default_start }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="end_time" class="form-label">结束时间 <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="end_time" name="end_time" 
+                               value="{{ default_end }}" required>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">添加安排</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- 排练安排列表 -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>乐队</th>
+                        <th>房间</th>
+                        <th>开始时间</th>
+                        <th>结束时间</th>
+                        <th>用途</th>
+                        <th>状态</th>
+                        <th class="text-center">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rehearsal in rehearsals %}
+                    {% set is_past = rehearsal.end_time < now %}
+                    <tr class="{% if is_past %}past-rehearsal{% endif %}">
+                        <td>{{ rehearsal.schedule_id }}</td>
+                        <td>{{ rehearsal.band_name }}</td>
+                        <td>{{ rehearsal.room_id }} ({{ rehearsal.room_type }})</td>
+                        <td>{{ rehearsal.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ rehearsal.end_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ rehearsal.purpose or '-' }}</td>
+                        <td>
+                            <span class="{% if rehearsal.status == '已预约' %}status-scheduled{% else %}status-cancelled{% endif %}">
+                                {{ rehearsal.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button class="btn btn-sm btn-warning" 
+                                        onclick="toggleEditForm('edit-{{ rehearsal.schedule_id }}')">
+                                    <i class="bi bi-pencil"></i> 编辑
+                                </button>
+                                <form method="POST" action="{{ url_for('rehearsals.delete_rehearsal', schedule_id=rehearsal.schedule_id) }}"
+                                      onsubmit="return confirm('确定要删除该排练安排吗？');">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="bi bi-trash"></i> 删除
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- 编辑表单 -->
+                    <tr id="edit-{{ rehearsal.schedule_id }}" class="editable-row bg-light">
+                        <td colspan="8">
+                            <form method="POST" action="{{ url_for('rehearsals.update_rehearsal', schedule_id=rehearsal.schedule_id) }}">
+                                <div class="row g-3">
+                                    <div class="col-md-2">
+                                        <label class="form-label">安排ID</label>
+                                        <input type="text" class="form-control" value="{{ rehearsal.schedule_id }}" readonly>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="edit-band-{{ rehearsal.schedule_id }}" class="form-label">乐队 <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="edit-band-{{ rehearsal.schedule_id }}" name="band_id" required>
+                                            {% for band in bands %}
+                                                <option value="{{ band.band_id }}" {% if band.band_id == rehearsal.band_id %}selected{% endif %}>
+                                                    {{ band.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="edit-room-{{ rehearsal.schedule_id }}" class="form-label">房间 <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="edit-room-{{ rehearsal.schedule_id }}" name="room_id" required>
+                                            {% for room in rooms %}
+                                                <option value="{{ room.room_id }}" {% if room.room_id == rehearsal.room_id %}selected{% endif %}>
+                                                    {{ room.room_id }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="edit-status-{{ rehearsal.schedule_id }}" class="form-label">状态 <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="edit-status-{{ rehearsal.schedule_id }}" name="status" required>
+                                            <option value="已预约" {% if rehearsal.status == '已预约' %}selected{% endif %}>已预约</option>
+                                            <option value="取消" {% if rehearsal.status == '取消' %}selected{% endif %}>取消</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="edit-start-{{ rehearsal.schedule_id }}" class="form-label">开始时间 <span class="text-danger">*</span></label>
+                                        <input type="datetime-local" class="form-control" id="edit-start-{{ rehearsal.schedule_id }}" 
+                                            name="start_time" value="{{ rehearsal.start_time.strftime('%Y-%m-%dT%H:%M') }}" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="edit-end-{{ rehearsal.schedule_id }}" class="form-label">结束时间 <span class="text-danger">*</span></label>
+                                        <input type="datetime-local" class="form-control" id="edit-end-{{ rehearsal.schedule_id }}" 
+                                            name="end_time" value="{{ rehearsal.end_time.strftime('%Y-%m-%dT%H:%M') }}" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="edit-purpose-{{ rehearsal.schedule_id }}" class="form-label">用途说明 (选填)</label>
+                                        <input type="text" class="form-control" id="edit-purpose-{{ rehearsal.schedule_id }}" 
+                                            name="purpose" value="{{ rehearsal.purpose or '' }}">
+                                    </div>
+                                    <div class="col-md-12 d-flex justify-content-end gap-2 mt-3">
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="bi bi-check"></i> 保存
+                                        </button>
+                                        <button type="button" class="btn btn-secondary" 
+                                                onclick="toggleEditForm('edit-{{ rehearsal.schedule_id }}')">
+                                            <i class="bi bi-x"></i> 取消
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <div class="text-muted">暂无排练安排数据</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // 切换编辑表单显示状态
+        function toggleEditForm(id) {
+            const formRow = document.getElementById(id);
+            formRow.style.display = formRow.style.display === 'none' ? 'table-row' : 'none';
+        }
+        
+        // 自动关闭闪存消息
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                new bootstrap.Alert(alert).close();
+            });
+        }, 5000);
+        
+        // 设置结束时间默认值为开始时间+1小时
+        document.getElementById('start_time').addEventListener('change', function() {
+            const startTime = new Date(this.value);
+            const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1小时后
+            document.getElementById('end_time').value = endTime.toISOString().slice(0,16);
+        });
+        
+        // 在编辑表单中也添加此功能
+        document.querySelectorAll('[id^="edit-start-"]').forEach(input => {
+            input.addEventListener('change', function() {
+                const startTime = new Date(this.value);
+                const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+                const endInputId = this.id.replace('start', 'end');
+                document.getElementById(endInputId).value = endTime.toISOString().slice(0,16);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
-    'password': 'your_password_here',
+    'password': '532929167xX',
     'database': 'band_manage'
 }
 

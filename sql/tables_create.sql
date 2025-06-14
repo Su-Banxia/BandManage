@@ -31,9 +31,9 @@ CREATE TABLE member_band (
 
 -- 可用房间表
 CREATE TABLE rooms (
-    room_id INT AUTO_INCREMENT PRIMARY KEY,
+    room_id VARCHAR(20) NOT NULL PRIMARY KEY,  
     type ENUM('排练室', '仓库') NOT NULL,
-    location_description VARCHAR(255) NOT NULL,
+    location_description VARCHAR(255),        -- 选填，允许NULL
     is_available ENUM('是', '否') NOT NULL DEFAULT '否',
     CHECK (type <> '仓库' OR is_available = '否')
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -42,7 +42,7 @@ CREATE TABLE rooms (
 CREATE TABLE rehearsals (
     schedule_id INT AUTO_INCREMENT PRIMARY KEY,
     band_id INT NOT NULL,
-    room_id INT NOT NULL,
+    room_id VARCHAR(20) NOT NULL,            
     start_time DATETIME NOT NULL,
     end_time DATETIME NOT NULL,
     purpose VARCHAR(255),
@@ -77,7 +77,7 @@ CREATE TABLE equipment (
     equipment_id INT AUTO_INCREMENT PRIMARY KEY,
     type VARCHAR(50) NOT NULL,
     status ENUM('可用', '借出', '维修中', '损坏或丢失') NOT NULL DEFAULT '可用',
-    storage_room_id INT NOT NULL,
+    storage_room_id VARCHAR(20) NOT NULL,
     FOREIGN KEY (storage_room_id) REFERENCES rooms(room_id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

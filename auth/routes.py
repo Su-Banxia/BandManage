@@ -62,7 +62,7 @@ def login():
             return render_template('auth/login.html')
         
         conn = get_db()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(dictionary=True)  # 使用字典游标
         
         try:
             # 查询用户
@@ -70,7 +70,7 @@ def login():
             user = cursor.fetchone()
             
             if user and check_password_hash(user['password'], password):
-                session['user_id'] = user['user_id']
+                session['user_id'] = user['user_id']  
                 session['username'] = user['username']
                 flash('登录成功！', 'success')
                 return redirect(url_for('home'))

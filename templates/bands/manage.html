@@ -52,9 +52,12 @@
     <div class="container py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="mb-0">乐队管理</h1>
-            <div>
-                <a href="{{ url_for('members.manage_members') }}" class="btn btn-outline-primary me-2">管理成员</a>
-                <a href="{{ url_for('relationships.manage_relationships') }}" class="btn btn-outline-secondary">管理关系</a>
+            <div class="btn-group">
+                <a href="{{ url_for('home') }}" class="btn btn-primary">
+                    <i class="bi bi-house-door"></i> 回到主页
+                </a>
+                <a href="{{ url_for('members.manage_members') }}" class="btn btn-outline-primary">管理成员</a>
+                <a href="{{ url_for('relationships.manage_relationships') }}" class="btn btn-outline-primary">管理关系</a>
             </div>
         </div>
         
