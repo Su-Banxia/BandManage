@@ -5,6 +5,10 @@ from routes.members.routes import members_bp
 from routes.relationships.routes import relationships_bp
 from routes.rooms.routes import rooms_bp
 from routes.rehearsals.routes import rehearsals_bp
+from routes.equipment.routes import equipment_bp
+from routes.equipment_rentals.routes import rentals_bp
+from routes.performances.routes import performances_bp
+from routes.performance_songs.routes import songs_bp
 from config import SECRET_KEY
 
 import time
@@ -23,6 +27,19 @@ app.register_blueprint(members_bp)
 app.register_blueprint(relationships_bp)
 app.register_blueprint(rooms_bp)
 app.register_blueprint(rehearsals_bp)
+app.register_blueprint(equipment_bp)
+app.register_blueprint(rentals_bp)
+app.register_blueprint(performances_bp)
+app.register_blueprint(songs_bp)
+
+@app.template_filter('datetimeformat')
+def datetimeformat_filter(value, format='%Y-%m-%d %H:%M'):
+    """将 datetime 对象格式化为字符串"""
+    if value is None:
+        return ""
+    if isinstance(value, datetime):
+        return value.strftime(format)
+    return value
 
 def get_db():
     """获取数据库连接"""
@@ -81,7 +98,7 @@ def background_scheduler():
             print(f"更新房间状态失败: {e}")
         
         # 每5分钟运行一次
-        time.sleep(30)
+        time.sleep(300)
 
 def start_background_scheduler():
     """启动后台调度器线程"""

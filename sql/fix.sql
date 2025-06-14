@@ -1,12 +1,3 @@
-
-DROP TABLE IF EXISTS equipment_rentals;
-DROP TABLE IF EXISTS equipment;
-DROP TABLE IF EXISTS rehearsals;
-DROP TABLE IF EXISTS rooms;
-DROP TABLE IF EXISTS performances;
-DROP TABLE IF EXISTS performance_songs;
-DROP TABLE IF EXISTS member_band;
-DROP TABLE IF EXISTS bands;
-DROP TABLE IF EXISTS members;
-
-
+USE band_manage;
+ALTER TABLE performance_songs
+ADD UNIQUE INDEX performance_order_unique (performance_id, song_order);

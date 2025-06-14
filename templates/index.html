@@ -3,35 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>乐队管理系统</title>
+    <title>乐队成员管理系统</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
-        .hero-section {
-            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
-                        url('https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1350') no-repeat center center;
-            background-size: cover;
-            height: 80vh;
-            color: white;
-            display: flex;
-            align-items: center;
-            text-align: center;
-        }
-        .card-hover {
-            transition: transform 0.3s, box-shadow 0.3s;
+        .module-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
             height: 100%;
         }
-        .card-hover:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
-        .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: #0d6efd;
+        .module-header {
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            padding: 15px 0;
+            text-align: center;
+            color: white;
+            font-weight: bold;
         }
-        .system-card {
-            border-top: 4px solid #0d6efd;
+        .band-module {
+            background-color: #0d6efd;
+        }
+        .rehearsal-module {
+            background-color: #198754;
+        }
+        .equipment-module {
+            background-color: #6f42c1;
+        }
+        .sub-module {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+        .sub-module:hover {
+            background-color: #f8f9fa;
+        }
+        .sub-module:last-child {
+            border-bottom: none;
+        }
+        .user-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .btn-outline-purple {
+            color: #6f42c1;
+            border-color: #6f42c1;
+        }
+        .btn-outline-purple:hover {
+            background-color: #6f42c1;
+            color: white;
+        }
+        .text-purple {
+            color: #6f42c1;
         }
     </style>
 </head>
@@ -39,193 +69,216 @@
     <!-- 导航栏 -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="bi bi-music-note-beamed me-2"></i>乐队管理系统
+            <a class="navbar-brand" href="{{ url_for('home') }}">
+                <i class="bi bi-music-note-beamed me-2"></i>乐队成员管理系统
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('home') }}">首页</a>
+                    </li>
+                </ul>
                 <ul class="navbar-nav ms-auto">
+                    {% if session.get('user_id') %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle me-1"></i>{{ session.get('username', '用户') }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#">个人资料</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">注销</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('auth.login') }}">登录</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('auth.register') }}">注册</a>
                     </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- 英雄区域 -->
-    <section class="hero-section">
-        <div class="container">
-            <h1 class="display-3 fw-bold mb-4">专业的乐队管理解决方案</h1>
-            <p class="lead mb-5">一站式管理乐队成员、排练安排、演出信息和资源分配</p>
-            <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg px-4">
-                <i class="bi bi-box-arrow-in-right me-2"></i>立即开始
-            </a>
-        </div>
-    </section>
-
-    <!-- 功能特性 -->
-    <section class="py-5 bg-light">
-        <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold">系统功能</h2>
-                <p class="text-muted">全面覆盖乐队管理的各个环节</p>
-            </div>
-            
-            <div class="row g-4">
-                <!-- 乐队管理 -->
-                <div class="col-md-4">
-                    <div class="card h-100 card-hover">
-                        <div class="card-body text-center">
-                            <i class="bi bi-people feature-icon"></i>
-                            <h3 class="card-title">乐队管理</h3>
-                            <p class="card-text">
-                                创建和管理乐队信息，包括乐队名称、风格、成立日期和队长信息等。
-                            </p>
-                        </div>
-                        <div class="card-footer bg-transparent border-0">
-                            <a href="{{ url_for('bands.manage_bands') }}" class="btn btn-outline-primary">
-                                管理乐队 <i class="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
-                    </div>
+    <!-- 用户状态区域 -->
+    <div class="container mt-4">
+        <div class="user-info">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    {% if session.get('user_id') %}
+                    <h4 class="mb-0">欢迎回来，{{ session.get('username', '用户') }}！</h4>
+                    {% else %}
+                    <h4 class="mb-0">欢迎使用乐队成员管理系统</h4>
+                    <p class="text-muted mb-0">请登录或注册以使用全部功能</p>
+                    {% endif %}
                 </div>
-                
-                <!-- 成员管理 -->
-                <div class="col-md-4">
-                    <div class="card h-100 card-hover">
-                        <div class="card-body text-center">
-                            <i class="bi bi-person-badge feature-icon"></i>
-                            <h3 class="card-title">成员管理</h3>
-                            <p class="card-text">
-                                管理乐队成员信息，包括成员姓名、联系方式和在乐队中的角色。
-                            </p>
-                        </div>
-                        <div class="card-footer bg-transparent border-0">
-                            <a href="{{ url_for('members.manage_members') }}" class="btn btn-outline-primary">
-                                管理成员 <i class="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 关系管理 -->
-                <div class="col-md-4">
-                    <div class="card h-100 card-hover">
-                        <div class="card-body text-center">
-                            <i class="bi bi-diagram-3 feature-icon"></i>
-                            <h3 class="card-title">关系管理</h3>
-                            <p class="card-text">
-                                管理乐队与成员之间的关系，定义成员在乐队中的具体角色和职责。
-                            </p>
-                        </div>
-                        <div class="card-footer bg-transparent border-0">
-                            <a href="{{ url_for('relationships.manage_relationships') }}" class="btn btn-outline-primary">
-                                管理关系 <i class="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 房间管理 -->
-                <div class="col-md-4">
-                    <div class="card h-100 card-hover">
-                        <div class="card-body text-center">
-                            <i class="bi bi-house-door feature-icon"></i>
-                            <h3 class="card-title">房间管理</h3>
-                            <p class="card-text">
-                                管理乐队可用的排练室和仓库资源，包括位置和可用状态。
-                            </p>
-                        </div>
-                        <div class="card-footer bg-transparent border-0">
-                            <a href="{{ url_for('rooms.manage_rooms') }}" class="btn btn-outline-primary">
-                                管理房间 <i class="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 排练安排 -->
-                <div class="col-md-4">
-                    <div class="card h-100 card-hover">
-                        <div class="card-body text-center">
-                            <i class="bi bi-calendar-event feature-icon"></i>
-                            <h3 class="card-title">排练安排</h3>
-                            <p class="card-text">
-                                安排乐队排练时间和地点，管理排练计划并跟踪状态。
-                            </p>
-                        </div>
-                        <div class="card-footer bg-transparent border-0">
-                            <a href="{{ url_for('rehearsals.manage_rehearsals') }}" class="btn btn-outline-primary">
-                                安排排练 <i class="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 系统概览 -->
-                <div class="col-md-4">
-                    <div class="card h-100 card-hover system-card">
-                        <div class="card-body text-center">
-                            <i class="bi bi-graph-up feature-icon"></i>
-                            <h3 class="card-title">系统概览</h3>
-                            <p class="card-text">
-                                查看系统整体状态，包括乐队活动、成员参与和资源使用情况。
-                            </p>
-                        </div>
-                        <div class="card-footer bg-transparent border-0">
-                            <a href="#" class="btn btn-outline-primary disabled">
-                                系统概览 <i class="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
-                    </div>
+                <div class="col-md-4 text-end">
+                    {% if session.get('user_id') %}
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger">
+                        <i class="bi bi-box-arrow-right me-1"></i>注销
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary me-2">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>登录
+                    </a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-person-plus me-1"></i>注册
+                    </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- 系统优势 -->
+    <!-- 功能模块区域 -->
     <section class="py-5">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    
+            <div class="row g-4">
+                <!-- 乐队管理模块 -->
+                <div class="col-md-3">
+                    <div class="module-card h-100">
+                        <div class="module-header band-module">
+                            <h3 class="mb-0"><i class="bi bi-people me-2"></i>乐队管理</h3>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="sub-module">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">乐队信息</h5>
+                                        <p class="text-muted mb-0">创建与管理乐队信息</p>
+                                    </div>
+                                    <a href="{{ url_for('bands.manage_bands') }}" class="btn btn-sm btn-outline-primary">
+                                        管理 <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="sub-module">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">成员管理</h5>
+                                        <p class="text-muted mb-0">管理乐队成员信息</p>
+                                    </div>
+                                    <a href="{{ url_for('members.manage_members') }}" class="btn btn-sm btn-outline-primary">
+                                        管理 <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="sub-module">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">关系管理</h5>
+                                        <p class="text-muted mb-0">定义成员角色和职责</p>
+                                    </div>
+                                    <a href="{{ url_for('relationships.manage_relationships') }}" class="btn btn-sm btn-outline-primary">
+                                        管理 <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <h2 class="mb-4">为什么选择我们的系统？</h2>
-                    
-                    <div class="d-flex mb-4">
-                        <div class="flex-shrink-0">
-                            <i class="bi bi-check-circle-fill text-success fs-3 me-3"></i>
+                
+                <!-- 排练室租借模块 -->
+                <div class="col-md-3">
+                    <div class="module-card h-100">
+                        <div class="module-header rehearsal-module">
+                            <h3 class="mb-0"><i class="bi bi-house-door me-2"></i>排练室租借</h3>
                         </div>
-                        <div>
-                            <h5>高效的资源管理</h5>
-                            <p>优化排练室和仓库资源使用，避免时间冲突和资源浪费。</p>
+                        <div class="card-body p-0">
+                            <div class="sub-module">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">房间管理</h5>
+                                        <p class="text-muted mb-0">管理排练室和仓库</p>
+                                    </div>
+                                    <a href="{{ url_for('rooms.manage_rooms') }}" class="btn btn-sm btn-outline-success">
+                                        管理 <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="sub-module">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">排练安排</h5>
+                                        <p class="text-muted mb-0">安排排练时间和地点</p>
+                                    </div>
+                                    <a href="{{ url_for('rehearsals.manage_rehearsals') }}" class="btn btn-sm btn-outline-success">
+                                        安排 <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="d-flex mb-4">
-                        <div class="flex-shrink-0">
-                            <i class="bi bi-check-circle-fill text-success fs-3 me-3"></i>
+                </div>
+                
+                <!-- 设备租赁模块 -->
+                <div class="col-md-3">
+                    <div class="module-card h-100">
+                        <div class="module-header equipment-module">
+                            <h3 class="mb-0"><i class="bi bi-mic me-2"></i>设备租赁</h3>
                         </div>
-                        <div>
-                            <h5>清晰的职责分配</h5>
-                            <p>明确每个成员在乐队中的角色和职责，提高团队协作效率。</p>
+                        <div class="card-body p-0">
+                            <div class="sub-module">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">设备管理</h5>
+                                        <p class="text-muted mb-0">管理乐器、音响等设备</p>
+                                    </div>
+                                    <a href="{{ url_for('equipment.manage_equipment') }}" class="btn btn-sm btn-outline-purple">
+                                        管理 <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="sub-module">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">设备租赁</h5>
+                                        <p class="text-muted mb-0">管理设备租赁记录</p>
+                                    </div>
+                                    <a href="{{ url_for('equipment_rentals.manage_rentals') }}" class="btn btn-sm btn-outline-purple">
+                                        租赁 <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="d-flex mb-4">
-                        <div class="flex-shrink-0">
-                            <i class="bi bi-check-circle-fill text-success fs-3 me-3"></i>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="module-card h-100">
+                        <div class="module-header" style="background-color: #fd7e14;">
+                            <h3 class="mb-0"><i class="bi bi-ticket-perforated me-2"></i>表演记录</h3>
                         </div>
-                        <div>
-                            <h5>智能的日程安排</h5>
-                            <p>自动检查时间冲突，确保排练计划顺利进行。</p>
+                        <div class="card-body p-0">
+                            <div class="sub-module">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">表演管理</h5>
+                                        <p class="text-muted mb-0">管理乐队表演信息</p>
+                                    </div>
+                                    <a href="{{ url_for('performances.manage_performances') }}" class="btn btn-sm btn-outline-warning">
+                                        管理 <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="sub-module">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">曲目管理</h5>
+                                        <p class="text-muted mb-0">选择表演后管理曲目</p>
+                                    </div>
+                                    <!-- 改为链接到表演管理页面 -->
+                                    <a href="{{ url_for('performances.manage_performances') }}" class="btn btn-sm btn-outline-warning">
+                                        选择 <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -238,7 +291,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <h5>乐队管理系统</h5>
+                    <h5>乐队成员管理系统</h5>
                     <p class="text-white-50">提供专业的乐队管理解决方案，帮助乐队高效运作。</p>
                 </div>
                 <div class="col-md-3">
@@ -246,20 +299,21 @@
                     <ul class="list-unstyled">
                         <li><a href="{{ url_for('bands.manage_bands') }}" class="text-white-50">乐队管理</a></li>
                         <li><a href="{{ url_for('rehearsals.manage_rehearsals') }}" class="text-white-50">排练安排</a></li>
-                        <li><a href="{{ url_for('rooms.manage_rooms') }}" class="text-white-50">房间管理</a></li>
+                        <li><a href="{{ url_for('equipment.manage_equipment') }}" class="text-white-50">设备租赁</a></li>
+                        <li><a href="{{ url_for('performances.manage_performances') }}" class="text-white-50">表演记录</a></li>
                     </ul>
                 </div>
                 <div class="col-md-3">
                     <h5>联系我们</h5>
                     <ul class="list-unstyled">
-                        <li class="text-white-50"><i class="bi bi-envelope me-2"></i> contact@bandmanage.com</li>
-                        <li class="text-white-50"><i class="bi bi-telephone me-2"></i> (123) 456-7890</li>
+                        <li class="text-white-50"><i class="bi bi-envelope me-2"></i> subanxia@mail.ustc.edu.com</li>
+                        <li class="text-white-50"><i class="bi bi-telephone me-2"></i> 13708641805</li>
                     </ul>
                 </div>
             </div>
             <hr class="bg-light">
             <div class="text-center text-white-50">
-                &copy; 2023 乐队管理系统. 保留所有权利.
+                &copy; 2025 乐队管理系统. 
             </div>
         </div>
     </footer>

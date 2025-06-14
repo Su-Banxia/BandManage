@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设备管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .editable-row {
+            display: none;
+        }
+        .flash-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            min-width: 300px;
+        }
+        .form-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .action-buttons {
+            min-width: 120px;
+        }
+        .status-available { color: #198754; }
+        .status-rented { color: #6f42c1; }
+        .status-maintenance { color: #fd7e14; }
+        .status-lost { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">设备管理</h1>
+            <div class="btn-group">
+                <a href="{{ url_for('home') }}" class="btn btn-primary">
+                    <i class="bi bi-house-door"></i> 回到主页
+                </a>
+                <a href="{{ url_for('equipment_rentals.manage_rentals') }}" class="btn btn-outline-primary">管理设备租赁</a>
+            </div>
+        </div>
+        
+        <!-- 闪存消息 -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show flash-message" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+        
+        <!-- 添加设备表单 -->
+        <div class="form-container">
+            <h3 class="mb-3">添加新设备</h3>
+            <form method="POST" action="{{ url_for('equipment.create_equipment') }}">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label for="type" class="form-label">设备类型</label>
+                        <input type="text" class="form-control" id="type" name="type" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">状态</label>
+                        <select class="form-select" id="status" name="status" required>
+                            <option value="可用" selected>可用</option>
+                            <option value="借出">借出</option>
+                            <option value="维修中">维修中</option>
+                            <option value="损坏或丢失">损坏或丢失</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="storage_room_id" class="form-label">存放房间</label>
+                        <select class="form-select" id="storage_room_id" name="storage_room_id" required>
+                            {% for room in rooms %}
+                                <option value="{{ room.room_id }}">{{ room.room_id }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">添加设备</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- 设备列表 -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>设备类型</th>
+                        <th>状态</th>
+                        <th>存放房间</th>
+                        <th class="text-center">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in equipment_list %}
+                    <tr>
+                        <td>{{ item.equipment_id }}</td>
+                        <td>{{ item.type }}</td>
+                        <td>
+                            <span class="status-{{ 'available' if item.status=='可用' else 'rented' if item.status=='借出' else 'maintenance' if item.status=='维修中' else 'lost' }}">
+                                {{ item.status }}
+                            </span>
+                        </td>
+                        <td>{{ item.room_id }}</td>
+                        <td class="action-buttons">
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button class="btn btn-sm btn-warning" 
+                                        onclick="toggleEditForm('edit-{{ item.equipment_id }}')">
+                                    编辑
+                                </button>
+                                <form method="POST" action="{{ url_for('equipment.delete_equipment', equipment_id=item.equipment_id) }}" 
+                                      onsubmit="return confirm('确定要删除该设备吗？此操作不可恢复！');">
+                                    <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- 编辑表单 (默认隐藏) -->
+                    <tr id="edit-{{ item.equipment_id }}" class="editable-row bg-light">
+                        <td colspan="5">
+                            <form method="POST" action="{{ url_for('equipment.update_equipment', equipment_id=item.equipment_id) }}">
+                                <div class="row g-3">
+                                    <div class="col-md-2">
+                                        <label class="form-label">设备ID</label>
+                                        <input type="text" class="form-control" value="{{ item.equipment_id }}" readonly>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="edit-type-{{ item.equipment_id }}" class="form-label">设备类型</label>
+                                        <input type="text" class="form-control" id="edit-type-{{ item.equipment_id }}" 
+                                               name="type" value="{{ item.type }}" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="edit-status-{{ item.equipment_id }}" class="form-label">状态</label>
+                                        <select class="form-select" id="edit-status-{{ item.equipment_id }}" name="status" required>
+                                            <option value="可用" {% if item.status == '可用' %}selected{% endif %}>可用</option>
+                                            <option value="借出" {% if item.status == '借出' %}selected{% endif %}>借出</option>
+                                            <option value="维修中" {% if item.status == '维修中' %}selected{% endif %}>维修中</option>
+                                            <option value="损坏或丢失" {% if item.status == '损坏或丢失' %}selected{% endif %}>损坏或丢失</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="edit-storage-{{ item.equipment_id }}" class="form-label">存放房间</label>
+                                        <select class="form-select" id="edit-storage-{{ item.equipment_id }}" name="storage_room_id" required>
+                                            {% for room in rooms %}
+                                                <option value="{{ room.room_id }}" 
+                                                    {% if room.room_id == item.storage_room_id %}selected{% endif %}>
+                                                    {{ room.room_id }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end gap-2">
+                                        <button type="submit" class="btn btn-success">保存</button>
+                                        <button type="button" class="btn btn-secondary" 
+                                                onclick="toggleEditForm('edit-{{ item.equipment_id }}')">
+                                            取消
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4">
+                            <div class="text-muted">暂无设备数据</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // 切换编辑表单显示状态
+        function toggleEditForm(id) {
+            const formRow = document.getElementById(id);
+            formRow.style.display = formRow.style.display === 'none' ? 'table-row' : 'none';
+        }
+        
+        // 自动关闭闪存消息
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+    </script>
+</body>
+</html>
