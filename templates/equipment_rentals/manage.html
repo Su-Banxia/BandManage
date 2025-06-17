@@ -127,7 +127,7 @@
                     <tr class="{% if rental.return_date %}returned-row{% elif rental.due_date < today %}overdue-row{% endif %}">
                         <td>{{ rental.rental_id }}</td>
                         <td>{{ rental.equipment_type }}</td>
-                        <td>{{ rental.borrower_name }}</td>
+                        <td>{{ rental.member_name }}</td>
                         <td>{{ rental.rent_date }}</td>
                         <td>
                             <span class="{% if not rental.return_date and rental.due_date < today %}overdue{% endif %}">
