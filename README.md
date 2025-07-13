@@ -41,6 +41,47 @@
    - 编排表演曲目顺序
    - 管理表演详细信息
 
+
+
+## 运行方式说明
+
+### 1. 环境准备
+
+确保系统上已安装 Python (3.8+ 版本) 和 MySQL (8.0 版本)。
+
+### 2. 安装依赖
+
+建议在虚拟环境中安装项目所需的 Python 包。
+
+````powershell
+# 安装依赖
+pip install flask mysql-connector-python
+````
+
+### 3. 数据库设置
+
+1.  启动 MySQL 服务。
+2.  创建一个名为 `band_manage` 的数据库。
+3.  打开 config.py 文件，修改 `DB_CONFIG` 中的 `user` 和 `password`，使其与您的 MySQL 配置匹配。
+4.  在 MySQL 客户端中，执行 sql 目录下的 SQL 脚本来创建数据表。首先执行 tables_create.sql。
+
+    ```sql
+    -- 例如，使用 MySQL 命令行工具：
+    -- mysql -u your_user -p band_manage < sql/tables_create.sql
+    ```
+
+    也可以执行 user.sql 来创建初始用户数据。
+
+### 4. 运行应用
+
+完成以上步骤后，在项目根目录下运行主程序：
+
+````sh
+python app.py
+````
+
+应用启动后，可以在浏览器中访问 `http://127.0.0.1:5000` 来查看主页 index.html。
+
 ## 项目结构
 
 ```

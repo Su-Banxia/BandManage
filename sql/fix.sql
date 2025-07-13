@@ -1,3 +1,11 @@
-USE band_manage;
-ALTER TABLE performance_songs
-ADD UNIQUE INDEX performance_order_unique (performance_id, song_order);
+use firsttest;
+ CREATE TABLE  SC
+ (
+	Sno CHAR(9),
+	Cno CHAR(4),
+	Grade SMALLINT,
+	Semester  CHAR(5),
+	PRIMARY KEY (Sno, Cno),
+	FOREIGN KEY(Sno) REFERENCES Student(Sno),
+	FOREIGN KEY (Cno) REFERENCES Course(Cno)
+);
